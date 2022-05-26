@@ -25,7 +25,7 @@ ClusterId = ''
     catchup=False,
     tags=["Spark", "EMR"],
 )
-def processer():
+def processer_build_metrics():
     @task
     def inicio():
         return True
@@ -77,4 +77,4 @@ def processer():
     # ---------------
 
 
-execucao = processer()
+execucao = processer_build_metrics()

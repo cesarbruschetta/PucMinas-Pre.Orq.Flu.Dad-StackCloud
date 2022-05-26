@@ -3,20 +3,10 @@ from airflow.operators.python import PythonOperator
 from airflow.operators.dummy import DummyOperator
 from airflow.models import Variable
 from datetime import datetime
-import boto3
 
-aws_access_key_id = Variable.get("aws_access_key_id")
-aws_secret_access_key = Variable.get("aws_secret_access_key")
-
-client = boto3.client(
-    "emr",
-    region_name="us-east-1",
-    aws_access_key_id=aws_access_key_id,
-    aws_secret_access_key=aws_secret_access_key,
-)
+import pandas as pd
 
 default_args = {"owner": "AdminUser", "start_date": datetime(2022, 4, 2)}
-ClusterId = ''
 
 @dag(
     default_args=default_args,
@@ -25,56 +15,49 @@ ClusterId = ''
     catchup=False,
     tags=["Spark", "EMR"],
 )
-def processer():
+def processer_consolidate_metrics():
     @task
     def inicio():
         return True
 
-    @task
-    def emr_consolidate_metrics(success_before: bool):
-        if success_before:
-            newstep = client.add_job_flow_steps(
-                JobFlowId=ClusterId,
-                Steps=[
-                    {
-                        "Name": "Consolidação dos indicadores",
-                        "ActionOnFailure": "CONTINUE",
-                        "HadoopJarStep": {
-                            "Jar": "command-runner.jar",
-                            "Args": [
-                                "spark-submit",
-                                "--master",
-                                "yarn",
-                                "--deploy-mode",
-                                "cluster",
-                                "s3://dev-datalake-artifact-643626749185/pyspark/job_spark_consolidate_metrics.py",
-                            ],
-                        },
-                    }
-                ],
-            )
-            return newstep["StepIds"][0]
-
-    @task
-    def wait_emr_job(stepId: str):
-        waiter = client.get_waiter("step_complete")
-
-        waiter.wait(
-            ClusterId=ClusterId,
-            StepId=stepId,
-            WaiterConfig={"Delay": 10, "MaxAttempts": 120},
+    @task.virtualenv(
+        use_dill=True,
+        system_site_packages=False,
+        requirements=['pandas'],
+    )
+    def consolidate_metrics(success_before: bool):
+        datatemp_v1 = pd.read_parquet(
+            's3://dev-datalake-refined-643626749185/med_salario/'
         )
-        return True
 
-    fim = DummyOperator(task_id="fim")
+        datatemp_v2 = pd.read_parquet(
+            's3://dev-datalake-refined-643626749185/med_horas_trab/'
+        )
 
+        datatemp_v3 = pd.read_parquet(
+            's3://dev-datalake-refined-643626749185/med_tempo_trab/'
+        )
+
+
+        resultados = pd.concat(
+            [indicador_01, indicador_02, indicador_03],
+            axis=1,
+            ignore_index=True,
+        ).rename(
+            columns={
+                0: "media_dalario",
+                1: "media_horas_trabalhadas",
+                2: "media_tempo_trabalhado",
+            }
+        )
+
+        resultados.to_parquet("s3://dev-datalake-refined-643626749185/consolidate_metrics/")
 
     # Orquestração
     start = inicio()
-    indicadores = emr_consolidate_metrics(start)
-    wait_step = wait_emr_job(indicadores)
-    start >>indicadores >> wait_step >> fim
+    indicadores = consolidate_metrics(start)
+    start >>indicadores >> fim
     # ---------------
 
 
-execucao = processer()
+execucao = processer_consolidate_metrics()
