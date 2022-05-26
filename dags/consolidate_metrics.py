@@ -53,6 +53,8 @@ def processer_consolidate_metrics():
 
         resultados.to_parquet("s3://dev-datalake-refined-643626749185/consolidate_metrics/")
 
+    fim = DummyOperator(task_id="fim")
+    
     # Orquestração
     start = inicio()
     indicadores = consolidate_metrics(start)
