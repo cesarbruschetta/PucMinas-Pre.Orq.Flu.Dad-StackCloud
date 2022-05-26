@@ -22,7 +22,7 @@ def processer_consolidate_metrics():
     @task.virtualenv(
         use_dill=True,
         system_site_packages=False,
-        requirements=['pandas'],
+        requirements=['pandas', 'pyarrow', 'fsspec', 's3fs'],
     )
     def consolidate_metrics(success_before: bool):
         import pandas as pd
