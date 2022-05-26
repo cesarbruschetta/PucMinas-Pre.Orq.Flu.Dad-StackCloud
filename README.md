@@ -60,7 +60,7 @@ $ helm upgrade \
 ## Copiar arquivos spark para o S3
 
 ```shell
-$ aws s3 cp ./pyspark s3://dev-datalake-artifact-643626749185/pyspark/
+$ aws s3 cp ./pyspark/* s3://dev-datalake-artifact-643626749185/pyspark/
 ```
 
 

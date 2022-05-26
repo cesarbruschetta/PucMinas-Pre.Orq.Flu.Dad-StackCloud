@@ -16,7 +16,7 @@ client = boto3.client(
 )
 
 default_args = {"owner": "AdminUser", "start_date": datetime(2022, 4, 2)}
-ClusterId = ''
+ClusterId = 'j-AJ7K8FYULJ2Q'
 
 @dag(
     default_args=default_args,
