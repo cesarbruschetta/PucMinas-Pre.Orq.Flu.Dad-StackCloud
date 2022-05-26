@@ -1,6 +1,8 @@
 from pyspark.sql import functions as f
 from pyspark.sql import SparkSession
 
+spark = SparkSession.builder.appName("Processamento dos indicadores").getOrCreate()
+
 raisparquet = (
     spark
     .read

@@ -4,7 +4,6 @@ from airflow.operators.dummy import DummyOperator
 from airflow.models import Variable
 from datetime import datetime
 
-import pandas as pd
 
 default_args = {"owner": "AdminUser", "start_date": datetime(2022, 4, 2)}
 
@@ -26,6 +25,8 @@ def processer_consolidate_metrics():
         requirements=['pandas'],
     )
     def consolidate_metrics(success_before: bool):
+        import pandas as pd
+        
         datatemp_v1 = pd.read_parquet(
             's3://dev-datalake-refined-643626749185/med_salario/'
         )
